@@ -1,0 +1,54 @@
+#!/bin/bash
+
+set -e
+
+ROOT=$(drush ev "print DRUPAL_ROOT;");
+SITE=${ROOT##*/}
+
+
+if [ "$1" = "live" ] || [ "$1" = "dev" ] || [ "$1" = "test" ]; then
+	ENV=$1;
+elif [ "$1" == "-h" ]; then
+	echo "Usage: <env> [note[\"NOTE"\""]] [--updb run update.php] [--sync sync-content from live]";
+	echo "Example: test \"a deploy messasge"\"" --updb --sync";
+	exit 0;
+else
+	echo "Site environment required! For help, use the -h flag";
+	exit 0;
+fi;
+
+if [ "$2" ]
+then
+	NOTE=--note="\"$2"\";
+else
+	NOTE="";
+fi;
+
+if [ "$3" == "--updb" ]
+then
+	echo -n "Are you sure you want to update the environments database? This will run update.php on $ENV environment. [Y/N]";
+	read upConfirm;
+	if [[ ! "$upConfirm" =~ ^[Yy]$ ]]
+	then
+		UPDB="";
+	else
+		UPDB=--updatedb;
+	fi;
+
+fi;
+
+if [ "$4" == "--sync" ]
+then
+	echo -n "Are you sure you want to sync content? This will overrite Test env with Live env's database and files.? [Y/N]";
+	read syncConfirm;
+	if [[ ! "$syncConfirm" =~ ^[Yy]$ ]]
+	then
+		SYNC="";
+	else
+		SYNC="--sync-content";
+	fi;
+
+fi;
+
+echo "terminus env:deploy $SITE.$ENV $NOTE $UPDB $SYNC --cc"
+terminus env:deploy $SITE.$ENV $NOTE $UPDB $SYNC --cc;
